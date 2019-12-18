@@ -1,4 +1,4 @@
-import '../web_modules/jsonata.js';
+import "jsonata";
 
 const fetchModelSchema = async (className) => (await fetch('./model/' + className + '.json')).json()
 const fetchModelSchemaSync = (className) => {
@@ -51,11 +51,11 @@ export class MvStore {
      * A MvStore holds the state of a component and of some of its childs
      * If no parentStore is provided then the store is a root store
      * if not it is a sub store of its parent, accessible by its name.
-     * The model describes the model class, that resolve to a json schema file, 
+     * The model describes the model class, that resolve to a json schema file,
      * and mapping rules between the model and the props of the element.
-     * @param {*} name 
+     * @param {*} name
      * @param {*} element
-     * @param {*} parentStore 
+     * @param {*} parentStore
      */
     constructor(repository,name, element, parentStore = null) {
         this.repository=repository;
@@ -194,10 +194,10 @@ export class MvStore {
     }
 
     /**
-     * Register Substore in this parent store by the substore name 
+     * Register Substore in this parent store by the substore name
      * and returns the state assciated to this substore (wich is a substate of the parent state)
      * If a substore with same name exist then it is overriden
-     * @param {*} substore 
+     * @param {*} substore
      */
     registerSubStore(substore) {
         this.subStores[substore.name] = substore;

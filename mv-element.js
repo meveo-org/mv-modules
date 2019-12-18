@@ -1,6 +1,5 @@
-import { LitElement} from './lit-element.js';
-import { MvStore } from './mv-store.js';
-export * from './lit-element.js';
+import { MvStore } from "mv-store";
+export * from "lit-element";
 
 export class MvElement extends LitElement {
 
@@ -37,6 +36,6 @@ export class MvElement extends LitElement {
         this.store = new MvStore("OVH_integration",this.attributes['name'].value,this,parentStore);
         super.connectedCallback();
     }
-    
+
 
 }
