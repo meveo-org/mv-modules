@@ -1,4 +1,5 @@
 import { MvStore } from "mv-store";
+import { LitElement } from "lit-element";
 export * from "lit-element";
 
 export class MvElement extends LitElement {
