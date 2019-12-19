@@ -78,12 +78,12 @@ export class MvStore {
             }
         }
         if (this.localStore||this.serverStore) {
-            if (this.parentStore) { console.log("before initLocalState " + this.name + " : " + (this.state === this.parentStore.state[this.name])) }
+            // if (this.parentStore) { console.log("before initLocalState " + this.name + " : " + (this.state === this.parentStore.state[this.name])) }
             this.initLocalState();
-            if (this.parentStore) { console.log("after initLocalState " + this.name + " : " + (this.state === this.parentStore.state[this.name])) }
+            // if (this.parentStore) { console.log("after initLocalState " + this.name + " : " + (this.state === this.parentStore.state[this.name])) }
         }
         this.dispatch("");
-        if (this.parentStore) { console.log("after dispatch " + this.name + " : " + (this.state === this.parentStore.state[this.name])) }
+        // if (this.parentStore) { console.log("after dispatch " + this.name + " : " + (this.state === this.parentStore.state[this.name])) }
     }
 
     initLocalState() {
@@ -188,7 +188,7 @@ export class MvStore {
                     this.listeners[name] = [];
                 }
                 this.listeners[name].push({ element, mappings, store: (!store) ? this : store });
-                console.log("register listener on " + name);
+                // console.log("register listener on " + name);
             }
         }
     }
@@ -246,7 +246,7 @@ export class MvStore {
                     }
                 }
             });
-            console.log("dispatch " + storeName + "." + itemName + " to " + interestedListeners.length + " listeners");
+            // console.log("dispatch " + storeName + "." + itemName + " to " + interestedListeners.length + " listeners");
             for (const listener of interestedListeners) {
                 let element = listener.element;
                 for (const mapping of listener.mappings) {
