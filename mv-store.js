@@ -96,35 +96,7 @@ export class MvStore {
   }
 
   initLocalState() {
-    if (this.model && this.model.modelClass) {
-      let schema = fetchModelSchemaSync(this.model.modelClass);
-      if (schema.type === "object") {
-        Object.getOwnPropertyNames(schema.properties).forEach(key => {
-          let value = schema.properties[key];
-          if (this.state[key] === undefined) {
-            if (value.type === "array") {
-              this.state[key] = [];
-            } else if (value.type === "object") {
-              this.state[key] = {};
-            } else if (value.type === "string") {
-              this.state[key] = "";
-            } else if (value.type === "number") {
-              this.state[key] = 0.0;
-            } else if (value.type === "integer") {
-              this.state[key] = 0;
-            } else if (value.type === "boolean") {
-              this.state[key] = false;
-            } else if (value.type === "null") {
-              this.state[key] = null;
-            }
-            //set state to initial value from element, typically from attribute
-            if (this.element[key] !== undefined) {
-              this.state[key] = this.element[key];
-            }
-          }
-        });
-      }
-    }
+    this.resetState();
     this.loadState();
   }
 
@@ -342,6 +314,38 @@ export class MvStore {
       let loadedState = JSON.parse(localStorage.getItem(this.name));
       if (loadedState != null) {
         this.state = { ...this.state, ...loadedState };
+      }
+    }
+  }
+
+  resetState() {
+    if (this.model && this.model.modelClass) {
+      let schema = fetchModelSchemaSync(this.model.modelClass);
+      if (schema.type === "object") {
+        Object.getOwnPropertyNames(schema.properties).forEach(key => {
+          let value = schema.properties[key];
+          if (this.state[key] === undefined) {
+            if (value.type === "array") {
+              this.state[key] = [];
+            } else if (value.type === "object") {
+              this.state[key] = {};
+            } else if (value.type === "string") {
+              this.state[key] = "";
+            } else if (value.type === "number") {
+              this.state[key] = 0.0;
+            } else if (value.type === "integer") {
+              this.state[key] = 0;
+            } else if (value.type === "boolean") {
+              this.state[key] = false;
+            } else if (value.type === "null") {
+              this.state[key] = null;
+            }
+            //set state to initial value from element, typically from attribute
+            if (this.element[key] !== undefined) {
+              this.state[key] = this.element[key];
+            }
+          }
+        });
       }
     }
   }
