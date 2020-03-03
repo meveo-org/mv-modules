@@ -52,15 +52,15 @@ String.prototype.evaluateOnContext = function(params) {
 
 export class MvStore {
   /**
-     * A MvStore holds the state of a component and of some of its childs
-     * If no parentStore is provided then the store is a root store
-     * if not it is a sub store of its parent, accessible by its name.
-     * The model describes the model class, that resolve to a json schema file,
-     * and mapping rules between the model and the props of the element.
-     * @param {*} name
-     * @param {*} element
-     * @param {*} parentStore
-     */
+   * A MvStore holds the state of a component and of some of its childs
+   * If no parentStore is provided then the store is a root store
+   * if not it is a sub store of its parent, accessible by its name.
+   * The model describes the model class, that resolve to a json schema file,
+   * and mapping rules between the model and the props of the element.
+   * @param {*} name
+   * @param {*} element
+   * @param {*} parentStore
+   */
   constructor(repository, name, element, parentStore = null) {
     this.repository = repository;
     this.name = name;
@@ -184,11 +184,11 @@ export class MvStore {
   }
 
   /**
-     * Register Substore in this parent store by the substore name
-     * and returns the state assciated to this substore (wich is a substate of the parent state)
-     * If a substore with same name exist then it is overriden
-     * @param {*} substore
-     */
+   * Register Substore in this parent store by the substore name
+   * and returns the state assciated to this substore (wich is a substate of the parent state)
+   * If a substore with same name exist then it is overriden
+   * @param {*} substore
+   */
   registerSubStore(substore) {
     this.subStores[substore.name] = substore;
     return this.getState(substore.name);
@@ -318,13 +318,13 @@ export class MvStore {
     }
   }
 
-  resetState() {
+  resetState(forceReset) {
     if (this.model && this.model.modelClass) {
       let schema = fetchModelSchemaSync(this.model.modelClass);
       if (schema.type === "object") {
         Object.getOwnPropertyNames(schema.properties).forEach(key => {
           let value = schema.properties[key];
-          if (this.state[key] === undefined) {
+          if (forceReset || this.state[key] === undefined) {
             if (value.type === "array") {
               this.state[key] = [];
             } else if (value.type === "object") {
@@ -341,11 +341,15 @@ export class MvStore {
               this.state[key] = null;
             }
             //set state to initial value from element, typically from attribute
-            if (this.element[key] !== undefined) {
+            if (this.element[key] !== undefined && !forceReset) {
               this.state[key] = this.element[key];
             }
           }
         });
+      }
+      if (forceReset) {
+        this.storeState();
+        this.dispatch("");
       }
     }
   }
