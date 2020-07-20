@@ -1,8 +1,9 @@
 import "jsonata";
+import * as config from "config";
 
-const fetchModelSchema = async className =>
+const fetchModelSchema = async (className) =>
   (await fetch("./model/" + className + ".json")).json();
-const fetchModelSchemaSync = className => {
+const fetchModelSchemaSync = (className) => {
   var request = new XMLHttpRequest();
   request.open("GET", "./model/" + className + ".json", false); // `false` makes the request synchronous
   request.send(null);
@@ -13,11 +14,10 @@ const fetchModelSchemaSync = className => {
 
 const fetchCEISync = (repository, className, filter) => {
   var request = new XMLHttpRequest();
-  request.open(
-    "POST",
-    "../../../api/rest/" + repository + "/persistence/" + className + "/list",
-    false
-  ); // `false` makes the request synchronous
+  const { API_URL } = (config || {}).MEVEO || {};
+  const REST_API = API_URL || "/meveo/api/rest/";
+  const REQUEST_URL = REST_API + repository + "/persistence/" + className + "/list";
+  request.open("POST", REQUEST_URL, false); // `false` makes the request synchronous
   request.setRequestHeader("Content-Type", "application/json");
   request.send(JSON.stringify({ filters: filter }));
   if (request.status === 200) {
@@ -32,19 +32,23 @@ const fetchCEISync = (repository, className, filter) => {
 };
 
 const storeCEIAsynch = (repository, name, className, state) => {
-  fetch("../../../api/rest/" + repository + "/persistence", {
-    method: "post",
+  const { API_URL } = (config || {}).MEVEO || {};
+  const REST_API = API_URL || "/meveo/api/rest/";
+  const REQUEST_URL = REST_API + repository + "/persistence";
+
+  fetch(REQUEST_URL, {
+    method: "POST",
     headers: {
       Accept: "application/json, text/plain, */*",
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify([{ name: name, type: className, properties: state }])
+    body: JSON.stringify([{ name: name, type: className, properties: state }]),
   })
-    .then(data => console.log(JSON.stringify(data))) // JSON-string from `response.json()` call
-    .catch(error => console.error(error));
+    .then((data) => console.log(JSON.stringify(data))) // JSON-string from `response.json()` call
+    .catch((error) => console.error(error));
 };
 
-String.prototype.evaluateOnContext = function(params) {
+String.prototype.evaluateOnContext = function (params) {
   const names = Object.keys(params);
   const vals = Object.values(params);
   return new Function(...names, `return \`${this}\`;`)(...vals);
@@ -117,7 +121,7 @@ export class MvStore {
         names.push(value);
       }
     } else {
-      Object.keys(ast).forEach(k => {
+      Object.keys(ast).forEach((k) => {
         if (
           Array.isArray(ast[k]) &&
           ["arguments", "expressions", "steps"].includes(k)
@@ -150,7 +154,7 @@ export class MvStore {
   }
 
   registerElementListener(element, mappings, names, store) {
-    mappings = mappings.map(m => {
+    mappings = mappings.map((m) => {
       if (m.jsonataExpression) {
         return { ...m, jsonata: jsonata(m.jsonataExpression) };
       }
@@ -161,7 +165,7 @@ export class MvStore {
       this.extractNamesFromMappings(mappings, names);
     }
     if (this.parentStore) {
-      names = names.map(name => this.name + "." + name);
+      names = names.map((name) => this.name + "." + name);
       this.parentStore.registerElementListener(
         element,
         mappings,
@@ -176,7 +180,7 @@ export class MvStore {
         this.listeners[name].push({
           element,
           mappings,
-          store: !store ? this : store
+          store: !store ? this : store,
         });
         // console.log("register listener on " + name);
       }
@@ -215,7 +219,7 @@ export class MvStore {
       );
     } else {
       let interestedListeners = [];
-      Object.keys(this.listeners).forEach(listenerName => {
+      Object.keys(this.listeners).forEach((listenerName) => {
         let addListener = false;
         if (itemName == null) {
           addListener =
@@ -322,7 +326,7 @@ export class MvStore {
     if (this.model && this.model.modelClass) {
       let schema = fetchModelSchemaSync(this.model.modelClass);
       if (schema.type === "object") {
-        Object.getOwnPropertyNames(schema.properties).forEach(key => {
+        Object.getOwnPropertyNames(schema.properties).forEach((key) => {
           let value = schema.properties[key];
           if (forceReset || this.state[key] === undefined) {
             if (value.type === "array") {
@@ -376,7 +380,7 @@ export class MvStore {
   removeItem(itemName, item, dispatch = true) {
     //FIXME we should get the filter from the model
     this.state[itemName] = this.state[itemName].filter(
-      t => t.value !== item.value
+      (storedItem) => storedItem.value !== item.value
     );
     this.storeState();
     if (dispatch) {
@@ -386,12 +390,13 @@ export class MvStore {
 
   updateItem(itemName, item, dispatch = true) {
     //FIXME we should get the filter from the model
-    this.state[itemName] = this.state[itemName].map(t => {
-      if (t.value === item.value) {
-        t = { ...t, ...item };
-      }
-      return t;
-    });
+    this.state[itemName] = this.state[itemName].map(
+      (storedItem) => {
+        if (storedItem.value === item.value) {
+          storedItem = { ...storedItem, ...item };
+        }
+        return storedItem;
+      });
     this.storeState();
     if (dispatch) {
       this.dispatch(itemName);
