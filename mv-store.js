@@ -1,14 +1,24 @@
 import "jsonata";
 import * as config from "config";
 
-const fetchModelSchema = async (className) =>
-  (await fetch("./model/" + className + ".json")).json();
+const fetchModelSchema = async (className) => {
+  if (typeof className === "string") {
+    return (await fetch("./model/" + className + ".json")).json();
+  } else {
+    return className;
+  }
+};
+
 const fetchModelSchemaSync = (className) => {
-  var request = new XMLHttpRequest();
-  request.open("GET", "./model/" + className + ".json", false); // `false` makes the request synchronous
-  request.send(null);
-  if (request.status === 200) {
-    return JSON.parse(request.responseText);
+  if (typeof className === "string") {
+    var request = new XMLHttpRequest();
+    request.open("GET", "./model/" + className + ".json", false); // `false` makes the request synchronous
+    request.send(null);
+    if (request.status === 200) {
+      return JSON.parse(request.responseText);
+    }
+  } else {
+    return className;
   }
 };
 
@@ -16,7 +26,8 @@ const fetchCEISync = (repository, className, filter) => {
   var request = new XMLHttpRequest();
   const { API_URL } = (config || {}).MEVEO || {};
   const REST_API = API_URL || "/meveo/api/rest/";
-  const REQUEST_URL = REST_API + repository + "/persistence/" + className + "/list";
+  const REQUEST_URL =
+    REST_API + repository + "/persistence/" + className + "/list";
   request.open("POST", REQUEST_URL, false); // `false` makes the request synchronous
   request.setRequestHeader("Content-Type", "application/json");
   request.send(JSON.stringify({ filters: filter }));
@@ -322,35 +333,78 @@ export class MvStore {
     }
   }
 
-  resetState(forceReset) {
-    if (this.model && this.model.modelClass) {
-      let schema = fetchModelSchemaSync(this.model.modelClass);
-      if (schema.type === "object") {
-        Object.getOwnPropertyNames(schema.properties).forEach((key) => {
-          let value = schema.properties[key];
-          if (forceReset || this.state[key] === undefined) {
-            if (value.type === "array") {
-              this.state[key] = [];
-            } else if (value.type === "object") {
-              this.state[key] = {};
-            } else if (value.type === "string") {
-              this.state[key] = "";
-            } else if (value.type === "number") {
-              this.state[key] = 0.0;
-            } else if (value.type === "integer") {
-              this.state[key] = 0;
-            } else if (value.type === "boolean") {
-              this.state[key] = false;
-            } else if (value.type === "null") {
-              this.state[key] = null;
-            }
-            //set state to initial value from element, typically from attribute
-            if (this.element[key] !== undefined && !forceReset) {
-              this.state[key] = this.element[key];
+  initializeStore(state, schema, refSchemas, forceReset) {
+    const { type, properties, allOf } = schema;
+
+    if ((allOf || []).length > 0) {
+      allOf.forEach((childRef) => {
+        const reference = (refSchemas || []).find(
+          (refSchema) => refSchema.id === childRef["$ref"]
+        );
+        this.initializeStore(state, reference, refSchemas);
+      });
+    }
+
+    if (type === "object") {
+      Object.getOwnPropertyNames(properties).forEach((key) => {
+        const value = properties[key];
+        if (forceReset || state[key] === undefined) {
+          if (!value.type && !!value["$ref"]) {
+            state[key] = {};
+            const childSchema = (refSchemas || []).find(
+              (refSchema) => refSchema.id === value["$ref"]
+            );
+            this.initializeStore(
+              state[key],
+              childSchema,
+              refSchemas,
+              forceReset
+            );
+          } else {
+            switch (value.type) {
+              case "object":
+                state[key] = {};
+                break;
+              case "array":
+                state[key] = [];
+                break;
+              case "string":
+                state[key] = "";
+                break;
+              case "number":
+                state[key] = 0.0;
+                break;
+              case "integer":
+                state[key] = 0;
+                break;
+              case "boolean":
+                state[key] = false;
+                break;
+              default:
+                state[key] = null;
+                break;
             }
           }
-        });
-      }
+          //set state to initial value from element, typically from attribute
+          if (this.element[key] !== undefined && !forceReset) {
+            state[key] = this.element[key];
+          }
+        }
+      });
+    }
+  }
+
+  resetState(forceReset) {
+    const { modelClass, refSchemas } = this.model || {};
+    if (!!modelClass) {
+      const schema = fetchModelSchemaSync(modelClass) || {};
+      const childSchemas =
+        (refSchemas || []).map((refSchema) =>
+          fetchModelSchemaSync(refSchema)
+        ) || [];
+
+      this.initializeStore(this.state, schema, childSchemas, forceReset);
+
       if (forceReset) {
         this.storeState();
         this.dispatch("");
@@ -390,13 +444,12 @@ export class MvStore {
 
   updateItem(itemName, item, dispatch = true) {
     //FIXME we should get the filter from the model
-    this.state[itemName] = this.state[itemName].map(
-      (storedItem) => {
-        if (storedItem.value === item.value) {
-          storedItem = { ...storedItem, ...item };
-        }
-        return storedItem;
-      });
+    this.state[itemName] = this.state[itemName].map((storedItem) => {
+      if (storedItem.value === item.value) {
+        storedItem = { ...storedItem, ...item };
+      }
+      return storedItem;
+    });
     this.storeState();
     if (dispatch) {
       this.dispatch(itemName);
