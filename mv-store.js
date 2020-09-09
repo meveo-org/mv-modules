@@ -412,9 +412,33 @@ export class MvStore {
     }
   }
 
+  mapValue(formValues, name, value) {
+    const propertyIndex = (name || "").indexOf(".");
+    if (propertyIndex > -1) {
+      const parentName = name.substring(0, propertyIndex);
+      const propertyValue = this.mapValue(
+        formValues[parentName],
+        name.substring(propertyIndex + 1),
+        value
+      );
+      return { [parentName]: propertyValue };
+    }
+    return { [name]: value };
+  }
+
   /** State mutation functions */
   updateValue(itemName, newValue, dispatch = true) {
-    this.state[itemName] = newValue;
+    const propertyIndex = (itemName || "").indexOf(".");
+    if (propertyIndex > -1) {
+      const parentName = itemName.substring(0, propertyIndex);
+      const propertyName = itemName.substring(propertyIndex + 1);
+      this.state[parentName] = {
+        ...this.state[parentName],
+        ...this.mapValue(this.state[parentName] || {}, propertyName, newValue),
+      };
+    } else {
+      this.state[itemName] = newValue;
+    }
     this.storeState();
     if (dispatch) {
       this.dispatch(itemName);
