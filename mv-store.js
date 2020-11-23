@@ -334,14 +334,14 @@ export class MvStore {
   }
 
   initializeStore(state, schema, refSchemas, forceReset) {
-    const { type, properties, allOf } = schema;
+    const { type, properties, allOf } = schema || {};
 
     if ((allOf || []).length > 0) {
       allOf.forEach((childRef) => {
         const reference = (refSchemas || []).find(
           (refSchema) => refSchema.id === childRef["$ref"]
         );
-        this.initializeStore(state, reference, refSchemas);
+        this.initializeStore(state, reference, refSchemas, forceReset);
       });
     }
 
