@@ -1,0 +1,48 @@
+{
+  "storages" : [ "SQL" ],
+  "default" : "A list of tasks to be performed",
+  "$schema" : "http://json-schema.org/draft-07/schema",
+  "id" : "TaskList",
+  "title" : "Tasks",
+  "type" : "object",
+  "properties" : {
+    "description" : {
+      "storages" : [ "SQL" ],
+      "nullable" : true,
+      "description" : "Short description for the list of tasks",
+      "readOnly" : false,
+      "versionable" : false,
+      "id" : "CE_TaskList_description",
+      "title" : "TaskList.description",
+      "type" : "string",
+      "maxLength" : 255
+    },
+    "title" : {
+      "storages" : [ "SQL" ],
+      "nullable" : true,
+      "description" : "Name of the task list",
+      "readOnly" : false,
+      "versionable" : false,
+      "id" : "CE_TaskList_title",
+      "title" : "TaskList.title",
+      "type" : "string",
+      "maxLength" : 255
+    },
+    "tasks" : {
+      "storages" : [ "SQL" ],
+      "nullable" : true,
+      "uniqueItems" : true,
+      "description" : "The tasks to be performed",
+      "readOnly" : false,
+      "versionable" : false,
+      "id" : "CE_TaskList_tasks",
+      "title" : "TaskList.tasks",
+      "type" : "array",
+      "items" : {
+        "id" : "CE_TaskList_tasks_item",
+        "title" : "TaskList.tasks item",
+        "$ref" : "TaskItem"
+      }
+    }
+  }
+}

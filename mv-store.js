@@ -1,5 +1,4 @@
 import "jsonata";
-import * as config from "config";
 
 const fetchModelSchema = async (className) => {
   if (typeof className === "string") {
@@ -12,7 +11,8 @@ const fetchModelSchema = async (className) => {
 const fetchModelSchemaSync = (className) => {
   if (typeof className === "string") {
     var request = new XMLHttpRequest();
-    request.open("GET", "./model/" + className + ".json", false); // `false` makes the request synchronous
+    // `false` makes the request synchronous
+    request.open("GET", "./model/" + className + ".json", false);
     request.send(null);
     if (request.status === 200) {
       return JSON.parse(request.responseText);
@@ -22,7 +22,7 @@ const fetchModelSchemaSync = (className) => {
   }
 };
 
-const fetchCEISync = (repository, className, filter) => {
+const fetchCEISync = (repository, className, filter, config) => {
   var request = new XMLHttpRequest();
   const { API_URL } = (config || {}).MEVEO || {};
   const REST_API = API_URL || "/meveo/api/rest/";
@@ -33,7 +33,7 @@ const fetchCEISync = (repository, className, filter) => {
   request.send(JSON.stringify({ filters: filter }));
   if (request.status === 200) {
     let result = JSON.parse(request.responseText);
-    //FIXME ahould do something more reliable
+    //FIXME should do something more reliable
     if (result.length === 1) {
       return result[0];
     } else {
@@ -42,7 +42,7 @@ const fetchCEISync = (repository, className, filter) => {
   }
 };
 
-const storeCEIAsynch = (repository, name, className, state) => {
+const storeCEIAsync = (repository, name, className, state, config) => {
   const { API_URL } = (config || {}).MEVEO || {};
   const REST_API = API_URL || "/meveo/api/rest/";
   const REQUEST_URL = REST_API + repository + "/persistence";
@@ -59,15 +59,14 @@ const storeCEIAsynch = (repository, name, className, state) => {
     .catch((error) => console.error(error));
 };
 
-String.prototype.evaluateOnContext = function (params) {
-  const names = Object.keys(params);
-  const vals = Object.values(params);
-  return new Function(...names, `return \`${this}\`;`)(...vals);
-};
+const defaultFilter =
+  (id = "value") =>
+  (oldValue, newValue) =>
+    oldValue[id] === newValue[id];
 
 export class MvStore {
   /**
-   * A MvStore holds the state of a component and of some of its childs
+   * A MvStore holds the state of a component and of some of its children
    * If no parentStore is provided then the store is a root store
    * if not it is a sub store of its parent, accessible by its name.
    * The model describes the model class, that resolve to a json schema file,
@@ -76,38 +75,39 @@ export class MvStore {
    * @param {*} element
    * @param {*} parentStore
    */
-  constructor(repository, name, element, parentStore = null) {
-    this.repository = repository;
-    this.name = name;
+  constructor(element, name, parentStore = null) {
+    const { config, constructor: ctor, storageModes } = element;
+    const { MEVEO } = config || {};
+    const { REPOSITORY = "default" } = MEVEO || {};
+    const { model } = ctor;
+
     this.element = element;
     this.parentStore = parentStore;
+    this.config = config;
+    this.name = name || this.element.tagName.toLowerCase();
+    this.repository = REPOSITORY;
+    this.model = model || {};
     this.listeners = {};
     this.subStores = {};
     this.state = parentStore == null ? {} : parentStore.registerSubStore(this);
     this.localStore = false;
     this.serverStore = false;
-    if (this.element.storageModes) {
-      this.localStore = this.element.storageModes.includes("local");
-      this.serverStore = this.element.storageModes.includes("server");
+    if (storageModes) {
+      this.localStore = storageModes.includes("local");
+      this.serverStore = storageModes.includes("server");
     }
-    if (element.constructor.model) {
-      this.model = element.constructor.model;
-      if (this.model.mappings) {
-        this.registerElementListener(
-          element,
-          element.constructor.model.mappings,
-          false,
-          this
-        );
-      }
+    if (this.model.mappings) {
+      this.registerElementListener(
+        element,
+        element.constructor.model.mappings,
+        false,
+        this
+      );
     }
     if (this.localStore || this.serverStore) {
-      // if (this.parentStore) { console.log("before initLocalState " + this.name + " : " + (this.state === this.parentStore.state[this.name])) }
       this.initLocalState();
-      // if (this.parentStore) { console.log("after initLocalState " + this.name + " : " + (this.state === this.parentStore.state[this.name])) }
     }
-    this.dispatch("");
-    // if (this.parentStore) { console.log("after dispatch " + this.name + " : " + (this.state === this.parentStore.state[this.name])) }
+    this.dispatch();
   }
 
   initLocalState() {
@@ -164,7 +164,7 @@ export class MvStore {
     }
   }
 
-  registerElementListener(element, mappings, names, store) {
+  registerElementListener(element, mappings, names, store = this) {
     mappings = mappings.map((m) => {
       if (m.jsonataExpression) {
         return { ...m, jsonata: jsonata(m.jsonataExpression) };
@@ -175,14 +175,15 @@ export class MvStore {
       names = [];
       this.extractNamesFromMappings(mappings, names);
     }
+    console.log("element: ", element);
+    console.log("names: ", names);
+    console.log("store.state: ", store.state);
     if (this.parentStore) {
+      console.log("this.name: ", this.name);
+      console.log("this.parentStore: ", this.parentStore);
+      console.log("this.parentStore.state: ", this.parentStore.state);
       names = names.map((name) => this.name + "." + name);
-      this.parentStore.registerElementListener(
-        element,
-        mappings,
-        names,
-        !store ? this : store
-      );
+      this.parentStore.registerElementListener(element, mappings, names, store);
     } else {
       for (let name of names) {
         if (!this.listeners[name]) {
@@ -191,16 +192,15 @@ export class MvStore {
         this.listeners[name].push({
           element,
           mappings,
-          store: !store ? this : store,
+          store,
         });
-        // console.log("register listener on " + name);
       }
     }
   }
 
   /**
    * Register Substore in this parent store by the substore name
-   * and returns the state assciated to this substore (wich is a substate of the parent state)
+   * and returns the state associated to this substore (which is a substate of the parent state)
    * If a substore with same name exist then it is overriden
    * @param {*} substore
    */
@@ -293,11 +293,12 @@ export class MvStore {
   /** State storage function */
   storeState() {
     if (this.serverStore) {
-      storeCEIAsynch(
+      storeCEIAsync(
         this.repository,
         this.name,
         this.model.modelClass,
-        this.state
+        this.state,
+        this.config
       );
     }
     if (this.localStore && this.parentStore) {
@@ -319,7 +320,12 @@ export class MvStore {
             filter[filterName] = this.element[filterName];
           }
         }
-        let data = fetchCEISync(this.repository, this.model.modelClass, filter);
+        let data = fetchCEISync(
+          this.repository,
+          this.model.modelClass,
+          filter,
+          this.config
+        );
         if (data != null) {
           this.state = { ...this.state, ...data };
         }
@@ -347,12 +353,12 @@ export class MvStore {
 
     if (type === "object") {
       Object.getOwnPropertyNames(properties).forEach((key) => {
-        const value = properties[key];
+        const property = properties[key];
         if (forceReset || state[key] === undefined) {
-          if (!value.type && !!value["$ref"]) {
+          if (!property.type && !!property["$ref"]) {
             state[key] = {};
             const childSchema = (refSchemas || []).find(
-              (refSchema) => refSchema.id === value["$ref"]
+              (refSchema) => refSchema.id === property["$ref"]
             );
             this.initializeStore(
               state[key],
@@ -361,7 +367,7 @@ export class MvStore {
               forceReset
             );
           } else {
-            switch (value.type) {
+            switch (property.type) {
               case "object":
                 state[key] = {};
                 break;
@@ -456,9 +462,10 @@ export class MvStore {
   }
 
   removeItem(itemName, item, dispatch = true) {
-    //FIXME we should get the filter from the model
+    const { filterFunc, filterProp } = this.model;
+    const sameValue = filterFunc ? filterFunc : defaultFilter(filterProp);
     this.state[itemName] = this.state[itemName].filter(
-      (storedItem) => storedItem.value !== item.value
+      (storedItem) => !sameValue(storedItem, item)
     );
     this.storeState();
     if (dispatch) {
@@ -467,13 +474,11 @@ export class MvStore {
   }
 
   updateItem(itemName, item, dispatch = true) {
-    //FIXME we should get the filter from the model
-    this.state[itemName] = this.state[itemName].map((storedItem) => {
-      if (storedItem.value === item.value) {
-        storedItem = { ...storedItem, ...item };
-      }
-      return storedItem;
-    });
+    const { filterFunc, filterProp } = this.model;
+    const sameValue = filterFunc ? filterFunc : defaultFilter(filterProp);
+    this.state[itemName] = this.state[itemName].map((storedItem) =>
+      sameValue(storedItem, item) ? { ...storedItem, ...item } : storedItem
+    );
     this.storeState();
     if (dispatch) {
       this.dispatch(itemName);

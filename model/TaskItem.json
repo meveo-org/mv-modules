@@ -1,0 +1,55 @@
+{
+  "storages" : [ "SQL" ],
+  "default" : "Task item template",
+  "$schema" : "http://json-schema.org/draft-07/schema",
+  "id" : "TaskItem",
+  "title" : "Task Items",
+  "type" : "object",
+  "properties" : {
+    "task" : {
+      "storages" : [ "SQL" ],
+      "nullable" : false,
+      "minLength" : 1,
+      "description" : "The task to be performed",
+      "readOnly" : false,
+      "versionable" : false,
+      "id" : "CE_TaskItem_task",
+      "title" : "TaskItem.task",
+      "type" : "string",
+      "maxLength" : 255
+    },
+    "completionDate" : {
+      "storages" : [ "SQL" ],
+      "nullable" : true,
+      "format" : "date-time",
+      "description" : "Date task was completed",
+      "readOnly" : false,
+      "versionable" : false,
+      "id" : "CE_TaskItem_completionDate",
+      "title" : "TaskItem.completionDate",
+      "type" : "string"
+    },
+    "details" : {
+      "storages" : [ "SQL" ],
+      "nullable" : true,
+      "description" : "Additional Details",
+      "readOnly" : false,
+      "versionable" : false,
+      "id" : "CE_TaskItem_details",
+      "title" : "TaskItem.details",
+      "type" : "string"
+    },
+    "completed" : {
+      "storages" : [ "SQL" ],
+      "default" : "false",
+      "nullable" : true,
+      "description" : "Indicates if task is already completed",
+      "readOnly" : false,
+      "versionable" : false,
+      "id" : "CE_TaskItem_completed",
+      "title" : "TaskItem.completed",
+      "type" : "string"
+    }
+  },
+  "required" : [ "task" ]
+}

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+
+    <title>mv-modules</title>
+
+    <link rel="stylesheet" href="./css/meveo-theme.css" />
+
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/gh/meveo-org/mv-dependencies@master/es-module-shims/es-module-shims.min.js"
+    ></script>
+    <script type="importmap-shim">
+      {
+        "imports": {
+          "lit-element": "https://cdn.jsdelivr.net/gh/meveo-org/mv-dependencies@master/lit-element.js",
+          "jsonata": "https://cdn.jsdelivr.net/gh/meveo-org/mv-dependencies@master/jsonata.js",
+          "mv-element": "./mv-element.js",
+          "mv-store": "./mv-store.js"
+        }
+      }
+    </script>
+    <script type="module-shim" src="./demo.js"></script>
+  </head>
+
+  <body>
+    <tasks-app storage-modes="local"></tasks-app>
+  </body>
+</html>
