@@ -90,12 +90,13 @@ export class MvStore {
       this.localStore = this.element.storageModes.includes("local");
       this.serverStore = this.element.storageModes.includes("server");
     }
-    if (element.constructor.model) {
-      this.model = element.constructor.model;
+    const model = element.constructor.model || element.model; 
+    if (model) {
+      this.model = model;
       if (this.model.mappings) {
         this.registerElementListener(
           element,
-          element.constructor.model.mappings,
+          model.mappings,
           false,
           this
         );
