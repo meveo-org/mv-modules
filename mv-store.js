@@ -396,7 +396,7 @@ export class MvStore {
   }
 
   resetState(forceReset) {
-    const { modelClass, refSchemas } = this.model || {};
+    const { modelClass, refSchemas, entity } = this.model || {};
     if (!!modelClass) {
       const schema = fetchModelSchemaSync(modelClass) || {};
       const childSchemas =
@@ -404,6 +404,16 @@ export class MvStore {
           fetchModelSchemaSync(refSchema)
         ) || [];
 
+      this.initializeStore(this.state, schema, childSchemas, forceReset);
+
+      if (forceReset) {
+        this.storeState();
+        this.dispatch("");
+      }
+    } else if (!!entity) {
+      const schema = this.model.getSchema();
+      const childSchemas = this.model.getRefSchemas();
+      
       this.initializeStore(this.state, schema, childSchemas, forceReset);
 
       if (forceReset) {
