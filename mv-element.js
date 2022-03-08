@@ -1,5 +1,5 @@
-import { LitElement } from "lit-element";
-import { MvStore } from "mv-store";
+import { LitElement } from "lit";
+import { MvStore } from "@meveo-org/mv-store";
 import * as config from "config";
 
 export class MvElement extends LitElement {
