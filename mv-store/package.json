@@ -1,6 +1,6 @@
 {
   "name": "@meveo-org/mv-store",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "mv-store.js",
   "scripts": {
