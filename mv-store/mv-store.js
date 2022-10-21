@@ -1,5 +1,4 @@
 import "jsonata";
-import * as config from "config";
 
 const fetchModelSchema = async (className) => {
   if (typeof className === "string") {
@@ -22,7 +21,7 @@ const fetchModelSchemaSync = (className) => {
   }
 };
 
-const fetchCEISync = (repository, className, filter) => {
+const fetchCEISync = (repository, className, filter, config) => {
   var request = new XMLHttpRequest();
   const { API_URL } = (config || {}).MEVEO || {};
   const REST_API = API_URL || "/meveo/api/rest/";
@@ -42,7 +41,7 @@ const fetchCEISync = (repository, className, filter) => {
   }
 };
 
-const storeCEIAsynch = (repository, name, className, state) => {
+const storeCEIAsynch = (repository, name, className, state, config) => {
   const { API_URL } = (config || {}).MEVEO || {};
   const REST_API = API_URL || "/meveo/api/rest/";
   const REQUEST_URL = REST_API + repository + "/persistence";
@@ -76,7 +75,7 @@ export class MvStore {
    * @param {*} element
    * @param {*} parentStore
    */
-  constructor(repository, name, element, parentStore = null) {
+  constructor(repository, name, element, parentStore = null, config) {
     this.repository = repository;
     this.name = name;
     this.element = element;
@@ -86,6 +85,7 @@ export class MvStore {
     this.state = parentStore == null ? {} : parentStore.registerSubStore(this);
     this.localStore = false;
     this.serverStore = false;
+    this.config = config;
     if (this.element.storageModes) {
       this.localStore = this.element.storageModes.includes("local");
       this.serverStore = this.element.storageModes.includes("server");
@@ -298,7 +298,8 @@ export class MvStore {
         this.repository,
         this.name,
         this.model.modelClass,
-        this.state
+        this.state,
+        this.config
       );
     }
     if (this.localStore && this.parentStore) {
@@ -320,7 +321,7 @@ export class MvStore {
             filter[filterName] = this.element[filterName];
           }
         }
-        let data = fetchCEISync(this.repository, this.model.modelClass, filter);
+        let data = fetchCEISync(this.repository, this.model.modelClass, filter, this.config);
         if (data != null) {
           this.state = { ...this.state, ...data };
         }

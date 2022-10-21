@@ -1,12 +1,12 @@
 import { LitElement } from "lit";
 import { MvStore } from "@meveo-org/mv-store";
-import * as config from "config";
 
 export class MvElement extends LitElement {
   static get properties() {
     return {
       name: { type: String, attribute: true },
-      storageModes: { type: String, attribute: "storage-modes" }
+      storageModes: { type: String, attribute: "storage-modes" },
+      config: { type: Object }
     };
   }
 
@@ -33,7 +33,7 @@ export class MvElement extends LitElement {
   connectedCallback() {
     // TODO set parent store to its first parent MvElement's store.
     let parentStore = this.getParentStore(this.parentNode);
-    const { MEVEO } = config || {};
+    const { MEVEO } = this.config || {};
     const { REPOSITORY } = MEVEO || {};
     // initialise store from model
     // FIXME get repository from user info
@@ -41,7 +41,8 @@ export class MvElement extends LitElement {
       REPOSITORY || "default",
       this.attributes["name"].value,
       this,
-      parentStore
+      parentStore,
+      this.config,
     );
     super.connectedCallback();
   }
